@@ -1,5 +1,5 @@
 name: 07 - Using Expressions
-
+run-name: 07 - Using Expressions | DEBUG - ${{INPUTS.DEBIG && 'ON' || 'OFF'}}
 on:
   push:
 
@@ -16,7 +16,7 @@ jobs:
 
     steps:
       - name: "[debug] Print start-up data"
-        if: inputs.debug == true
+        if: inputs.debug 
         run: |
           echo "Triggered by: ${{ github.event_name }}"
           echo "Branch: ${{ github.ref }}"
