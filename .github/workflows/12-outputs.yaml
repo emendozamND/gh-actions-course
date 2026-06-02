@@ -1,7 +1,11 @@
+# Nombre visible del workflow en GitHub Actions
 name: 12 - Working with Outputs
 
+# Permite ejecutar el workflow manualmente
 on:
   workflow_dispatch:
+
+    # Inputs que el usuario puede seleccionar al ejecutar el workflow
     inputs:
       build-status:
         type: choice
@@ -11,33 +15,80 @@ on:
         default: success
 
 jobs:
+
+  # =====================================================
+  # JOB 1: BUILD
+  # =====================================================
   build:
     runs-on: ubuntu-latest
+
+    # Outputs del job.
+    # Estos valores podrán ser usados por otros jobs con needs.build.outputs
     outputs:
       build-status: ${{ steps.build.outputs.status }}
       output1: ${{ steps.build.outputs.output1 }}
+
     steps:
+
+      # Imprime la ruta del archivo especial GITHUB_OUTPUT
       - name: Print GITHUB_OUTPUT path
         run: echo "$GITHUB_OUTPUT"
+
+      # Este step genera outputs
       - name: Build
         id: build
         run: |
+
+          # Muestra la ruta del archivo GITHUB_OUTPUT
           echo "$GITHUB_OUTPUT"
+
+          # Crea un output llamado "status"
+          # El valor viene del input build-status
           echo "status=${{ inputs.build-status }}" >> "$GITHUB_OUTPUT"
+
+          # Crea un output llamado "output1"
           echo "output1=value1" >> "$GITHUB_OUTPUT"
+
+          # Crea un output llamado "output2"
+          # OJO: este output existe a nivel step,
+          # pero no se está exponiendo como output del job
           echo "output2=value2" >> "$GITHUB_OUTPUT"
+
+          # Muestra el contenido del archivo GITHUB_OUTPUT
           cat "$GITHUB_OUTPUT"
+
+      # Ejemplo intencional de error
       - name: Step with mistake
         run: |
+
+          # ERROR:
+          # Usar > sobrescribe el contenido del archivo.
+          # Lo correcto normalmente es usar >> para agregar sin borrar.
           echo "mistake=true" > "$GITHUB_OUTPUT"
+
+          # Aquí sólo aparecerá mistake=true,
+          # porque lo anterior sobrescribió el archivo
           cat "$GITHUB_OUTPUT"
+
+  # =====================================================
+  # JOB 2: DEPLOY
+  # =====================================================
   deploy:
     runs-on: ubuntu-latest
+
+    # Este job depende del job build
     needs: build
+
+    # Sólo se ejecuta si el output build-status es success
     if: ${{ needs.build.outputs.build-status == 'success' }}
+
     steps:
+
+      # Simula despliegue
       - name: Deploy
         run: echo "Deploying"
+
+      # Imprime el output recibido desde el job build
       - name: Print Outputs
         run: |
           echo "Output 1: ${{ needs.build.outputs.output1 }}"

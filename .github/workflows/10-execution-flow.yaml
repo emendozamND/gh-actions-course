@@ -1,54 +1,126 @@
+# Nombre visible del workflow en GitHub Actions
 name: 10 - Controlling the Execution Flow
 
+# Permite ejecutar el workflow manualmente
 on:
-    workflow_dispatch:
-        inputs:
-            pass-unit-tests:
-                type: boolean
-                description: Whether unit tests will pass or not
-                default: true
+  workflow_dispatch:
+
+    # Input para decidir si las pruebas unitarias pasan o fallan
+    inputs:
+
+      pass-unit-tests:
+        type: boolean
+        description: Whether unit tests will pass or not
+        default: true
 
 jobs:
+
+  # =====================================================
+  # JOB 1: LINT Y BUILD
+  # =====================================================
   lint-build:
+
     runs-on: ubuntu-latest
+
     steps:
+
+      # Simula el análisis de código y compilación
       - name: Lint and build
         run: echo "Linting and building project"
+
+  # =====================================================
+  # JOB 2: UNIT TESTS
+  # =====================================================
   unit-tests:
+
     runs-on: ubuntu-latest
+
     steps:
+
+      # Simula ejecución de pruebas unitarias
       - name: Running unit tests
         run: echo "Running tests..."
+
+      # Este paso sólo se ejecuta cuando
+      # pass-unit-tests = false
+      #
+      # exit 1 genera un error y falla el job
       - name: Failing tests
         if: ${{ !inputs.pass-unit-tests }}
         run: exit 1
+
+  # =====================================================
+  # JOB 3: DEPLOY A NONPROD
+  # =====================================================
   deploy-nonprod:
+
     runs-on: ubuntu-latest
+
+    # Este job depende de:
+    # - lint-build
+    # - unit-tests
+    #
+    # Ambos deben terminar correctamente
     needs:
       - lint-build
       - unit-tests
+
     steps:
+
+      # Simula despliegue a ambiente de pruebas
       - name: Deploying to nonprod
         run: echo "Deploying to nonprod..."
+
+  # =====================================================
+  # JOB 4: PRUEBAS E2E
+  # =====================================================
   e2e-tests:
+
     runs-on: ubuntu-latest
+
+    # Espera a que el despliegue en nonprod finalice
     needs:
       - deploy-nonprod
+
     steps:
+
+      # Simulación de pruebas End-To-End
       - name: Running E2E tests
         run: echo "Running E2E tests"
+
+  # =====================================================
+  # JOB 5: PRUEBAS DE CARGA
+  # =====================================================
   load-tests:
+
     runs-on: ubuntu-latest
+
+    # También depende del despliegue en nonprod
     needs:
       - deploy-nonprod
+
     steps:
+
+      # Simulación de pruebas de rendimiento
       - name: Running load tests
         run: echo "Running load tests"
+
+  # =====================================================
+  # JOB 6: DEPLOY A PRODUCCIÓN
+  # =====================================================
   deploy-prod:
+
     runs-on: ubuntu-latest
+
+    # Sólo puede ejecutarse cuando:
+    # - e2e-tests finaliza correctamente
+    # - load-tests finaliza correctamente
     needs:
       - e2e-tests
       - load-tests
+
     steps:
+
+      # Simulación de despliegue a producción
       - name: Deploying to prod
         run: echo "Deploying to prod..."

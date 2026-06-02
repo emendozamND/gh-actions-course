@@ -1,38 +1,92 @@
+# Nombre visible del workflow en GitHub Actions
 name: 09 - Using functions
+
+# Eventos que disparan el workflow
 on:
+
+    # Se ejecuta cuando se crea o actualiza un Pull Request
     pull_request:
+
+    # Permite ejecutarlo manualmente desde GitHub
     workflow_dispatch:
+
 jobs:
+
+    # =====================================================
+    # JOB PRINCIPAL
+    # =====================================================
     echo1:
+
+        # Runner donde se ejecutará el job
         runs-on: ubuntu-latest
+
         steps:
+
+            # Muestra el título del Pull Request
             - name: Print PR title
               run: echo "${{ github.event.pull_request.title }}"
+
+            # Convierte el objeto labels a JSON y lo imprime
             - name: Print PR labels
               run: |
                   cat <<EOF
                   ${{ toJSON(github.event.pull_request.labels ) }}
                   EOF
+
+            # Se ejecuta solamente cuando:
+            # 1. El workflow NO ha sido cancelado
+            # 2. El título del PR contiene la palabra "fix"
+            #
+            # Ejemplo:
+            # fix login bug
+            # hotfix payment issue
+            #
+            # contains() devuelve true si encuentra la palabra
             - name: bug step
               if: ${{ !cancelled() && contains(github.event.pull_request.title, 'fix') }}
               run: echo  "I am a bug fix"
+
+            # Simula una tarea larga
             - name: sleep for 20 seconds
               run: sleep 20
+
+            # Fuerza un error
+            #
+            # exit 1 indica fallo
+            # Esto provocará que las funciones
+            # success() y failure() cambien su valor
             - name: Failing step
               run: exit 1
+
+            # Este paso NO se ejecutará
+            #
+            # success() devuelve true sólo cuando
+            # todos los pasos anteriores tuvieron éxito
             - name: I will be skipped
               if: ${{ success() }}
               run: echo "I will print if previous steps succed."
+
+            # Este paso SI se ejecutará
+            #
+            # failure() devuelve true cuando
+            # cualquier paso anterior falló
             - name: I will execute
               if: ${{ failure() }}
               run: echo "I will print if any previous step fails."
+
+            # Este paso normalmente se ejecuta siempre
+            #
+            # Sólo deja de ejecutarse si el workflow
+            # fue cancelado manualmente
             - name: I will execute
               if: ${{ !cancelled() }}
               run: echo "I will always print, excep when the workflow is cancelled."
-            - name: I will execute when cancelled  
+
+            # Este paso solamente se ejecuta
+            # cuando alguien cancela el workflow
+            #
+            # Por ejemplo:
+            # Actions -> Cancel Workflow
+            - name: I will execute when cancelled
               if: ${{ cancelled() }}
-              run: echo "I  will print if the workflow has been cancelled."
-
-
-
-
+              run: echo "I will print if the workflow has been cancelled."

@@ -1,16 +1,26 @@
+# Nombre visible del workflow en la pestaña Actions de GitHub
 name: 11 - Working with Inputs
 
+# Permite ejecutar el workflow manualmente
 on:
   workflow_dispatch:
+
+    # Inputs que el usuario debe capturar al lanzar el workflow
     inputs:
+
+      # Input booleano para indicar si se debe omitir el despliegue
       dry-run:
         type: boolean
         description: Skip deployment and only print build output
         default: false
+
+      # Permite seleccionar un Environment configurado en GitHub
       target:
         type: environment
         required: true
         description: Which environment the workflow will target
+
+      # Lista desplegable para elegir la versión a desplegar
       tag:
         type: choice
         options:
@@ -21,16 +31,58 @@ on:
         description: Release from which to build and deploy
 
 jobs:
+
+  # =====================================================
+  # JOB 1: BUILD
+  # =====================================================
   build:
+
+    # Runner donde se ejecutará el job
     runs-on: ubuntu-latest
+
     steps:
+
+      # Simula la construcción de una versión específica
       - name: Build
         run: echo "Building from tag ${{ inputs.tag }}"
+
+  # =====================================================
+  # JOB 2: DEPLOY
+  # =====================================================
   deploy:
+
     runs-on: ubuntu-latest
+
+    # Sólo ejecuta este job cuando dry-run = false
+    #
+    # Si el usuario selecciona dry-run=true:
+    #   build => se ejecuta
+    #   deploy => se omite
+    #
+    # Si el usuario selecciona dry-run=false:
+    #   build => se ejecuta
+    #   deploy => se ejecuta
     if: ${{ !inputs.dry-run }}
+
+    # Asigna dinámicamente el Environment seleccionado
+    #
+    # Ejemplos:
+    # Development
+    # QA
+    # Staging
+    # Production
+    #
+    # Esto permite utilizar:
+    # - Secrets específicos
+    # - Approval Gates
+    # - Protection Rules
     environment: ${{ inputs.target }}
+
+    # Espera a que el job build termine correctamente
     needs: build
+
     steps:
+
+      # Simula el despliegue al ambiente seleccionado
       - name: Deploy
         run: echo "Deploying to ${{ inputs.target }}"

@@ -1,12 +1,20 @@
+# Nombre que aparecerá en la pestaña Actions de GitHub
 name: 13 - Using Caching
 
+# Evento que dispara el workflow
 on:
   workflow_dispatch:
+
+    # Parámetros configurables al ejecutar manualmente el workflow
     inputs:
+
+      # Permite habilitar o deshabilitar el uso del cache
       use-cache:
         description: Whether to execute cache step
         type: boolean
         default: true
+
+      # Permite seleccionar la versión de Node.js
       node-version:
         description: Node version
         type: choice
@@ -17,75 +25,154 @@ on:
         default: 20.x
 
 jobs:
+
+  # =====================================================
+  # JOB 1: INSTALACIÓN DE DEPENDENCIAS
+  # =====================================================
   install-deps:
+
+    # Runner donde se ejecutará el job
     runs-on: ubuntu-latest
+
+    # Directorio de trabajo por defecto para todos los comandos run
     defaults:
       run:
         working-directory: 13-caching/react-app
+
+    # Variables de salida que podrán consumir otros jobs
     outputs:
+
+      # Exporta la clave del cache para reutilizarla
       deps-cache-key: ${{ steps.cache-key.outputs.CACHE_KEY }}
+
     steps:
+
+      # Descarga el código fuente del repositorio
       - name: Checkout code
         uses: actions/checkout@v4
+
+      # Instala la versión de Node seleccionada
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: ${{ inputs.node-version }}
+
+      # Genera dinámicamente una clave única para el cache
       - name: Calculate cache key
         id: cache-key
         run: |
+
+          # hashFiles calcula un hash del package-lock.json
+          # Si el archivo cambia, el hash cambia y se genera un nuevo cache
           echo "CACHE_KEY=deps-node-modules-${{ hashFiles('13-caching/react-app/package-lock.json') }}" >> "$GITHUB_OUTPUT"
+
+      # Intenta recuperar node_modules desde cache
       - name: Download cached dependencies
         uses: actions/cache@v3
+
+        # Sólo ejecuta este paso si use-cache = true
         if: ${{ inputs.use-cache }}
+
         id: cache
+
         with:
+          # Carpeta a almacenar/restaurar
           path: 13-caching/react-app/node_modules
+
+          # Clave única del cache
           key: ${{ steps.cache-key.outputs.CACHE_KEY }}
+
+      # Instala dependencias sólo si no se encontró cache
       - name: Install dependencies
+
+        # cache-hit será true si el cache existe
         if: steps.cache.outputs.cache-hit != 'true'
+
+        # npm ci es recomendado en CI/CD porque genera instalaciones reproducibles
         run: npm ci
+
+  # =====================================================
+  # JOB 2: TESTING Y LINTING
+  # =====================================================
   lint-test:
+
     runs-on: ubuntu-latest
+
+    # Este job depende de install-deps
     needs: install-deps
+
     defaults:
       run:
         working-directory: 13-caching/react-app
+
     steps:
+
+      # Descarga el código fuente
       - name: Checkout code
         uses: actions/checkout@v4
+
+      # Configura Node.js
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: ${{ inputs.node-version }}
+
+      # Recupera node_modules desde cache
       - name: Download cached dependencies
         uses: actions/cache@v3
         id: cache
+
         with:
           path: 13-caching/react-app/node_modules
+
+          # Utiliza la clave generada por el job install-deps
           key: ${{ needs.install-deps.outputs.deps-cache-key }}
+
+      # Ejecuta pruebas unitarias
       - name: Testing
         run: npm run test
+
+      # Simulación de análisis estático del código
       - name: Linting
         run: echo "Linting..."
+
+  # =====================================================
+  # JOB 3: BUILD
+  # =====================================================
   build:
+
     runs-on: ubuntu-latest
+
+    # Espera a que install-deps finalice correctamente
     needs: install-deps
+
     defaults:
       run:
         working-directory: 13-caching/react-app
+
     steps:
+
+      # Descarga el código
       - name: Checkout code
         uses: actions/checkout@v4
+
+      # Configura Node.js
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: ${{ inputs.node-version }}
+
+      # Recupera dependencias desde cache
       - name: Download cached dependencies
         uses: actions/cache@v3
         id: cache
+
         with:
           path: 13-caching/react-app/node_modules
+
+          # Usa la misma clave generada anteriormente
           key: ${{ needs.install-deps.outputs.deps-cache-key }}
+
+      # Genera el build para producción
       - name: Building
         run: npm run build
