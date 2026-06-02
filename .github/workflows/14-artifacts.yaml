@@ -1,0 +1,83 @@
+# Nombre del workflow que aparecerá en GitHub Actions
+name: 14 - Working with Artifacts
+
+# Evento que dispara el workflow
+on:
+  workflow_dispatch:  # Permite ejecutarlo manualmente desde GitHub
+
+# Variables de entorno globales
+env:
+  build-artifact-key: app-${{ github.sha }}          # Nombre del artifact de build
+  test-coverage-key: test-coverage-${{ github.sha }} # Nombre del artifact de cobertura
+
+jobs:
+  test-build:
+    runs-on: ubuntu-latest  # Runner Linux
+
+    defaults:
+      run:
+        working-directory: 14-artifacts/react-app
+
+    steps:
+      # Descarga el código del repositorio
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Instala Node.js
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+
+      # Recupera dependencias desde cache
+      - name: Download cached dependencies
+        uses: actions/cache@v3
+        id: cache
+        with:
+          path: 14-artifacts/react-app/node_modules
+          key: deps-node-modules-${{ hashFiles('14-artifacts/react-app/package-lock.json') }}
+
+      # Instala dependencias solo si no estaban en cache
+      - name: Install dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: npm ci
+
+      # Ejecuta pruebas unitarias
+      - name: Unit tests
+        run: npm run test -- --coverage
+
+      # Guarda los resultados de cobertura como artifact
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.test-coverage-key }}
+          path: 14-artifacts/react-app/coverage
+
+      # Genera la aplicación para producción
+      - name: Build code
+        run: npm run build
+
+      # Guarda los archivos compilados como artifact
+      - name: Upload build files
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.build-artifact-key }}
+          path: 14-artifacts/react-app/build
+
+  deploy:
+    runs-on: ubuntu-latest
+
+    # Este job espera a que termine test-build
+    needs: test-build
+
+    steps:
+      # Descarga el artifact generado en el build
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.build-artifact-key }}
+          path: build
+
+      # Muestra la estructura de carpetas descargada
+      - name: Show folder structure
+        run: ls -R
