@@ -1,84 +1,46 @@
 # Nombre visible del workflow
 name: 17 - 1 - Custom Actions - Composite
+
 # Nombre que aparecerá en la ejecución del workflow
-# Permite visualizar el ambiente seleccionado
 run-name: 17 - 1 - Custom Actions - Composite | env - ${{ inputs.target-env }}
-# Eventos que disparan el workflow
+
 on:
-  # Permite ejecutar el workflow manualmente
   workflow_dispatch:
-    # Parámetros que el usuario debe seleccionar
     inputs:
-      # Ambiente al que se orientará la instalación
       target-env:
         description: Which environment to target for dependency installation
         type: choice
-        # Opciones disponibles en la interfaz
         options:
           - dev
           - prod
-# Variables globales del workflow
+
 env:
-  # Directorio donde se encuentra la aplicación React
   working-directory: 17-custom-actions/react-app
+
 jobs:
-  # =====================================================
-  # JOB: BUILD
-  # =====================================================
   build:
-    # Runner Linux
     runs-on: ubuntu-latest
-    # Directorio por defecto para todos los comandos run
+
     defaults:
       run:
         working-directory: ${{ env.working-directory }}
+
     steps:
-      # Descarga el código fuente del repositorio
       - uses: actions/checkout@v4
-      # =====================================================
-      # CUSTOM ACTION (COMPOSITE ACTION)
-      # =====================================================
-      #
-      # Ejecuta una acción personalizada ubicada dentro
-      # del repositorio:
-      #
-      # .github/actions/composite-cache-deps
-      #
-      # Esta acción probablemente:
-      # - Instala Node.js
-      # - Restaura cache
-      # - Instala dependencias npm
-      # - Expone outputs reutilizables
-      #
+
       - name: Setup Node and NPM Dependencies
-        # ID utilizado para acceder a los outputs
         id: setup-deps
-        # Ruta local de la Composite Action
         uses: ./.github/workflows/actions/composite-cache-deps
         with:
-          # Versión de Node.js que recibirá la acción
           node-version: 20.x
-          # Directorio de trabajo que recibirá la acción
           working-dir: ${{ env.working-directory }}
-          # Ambiente seleccionado por el usuario
-          target-env: ${{ inputs.target-env }}
-      # =====================================================
-      # CONSUMO DE OUTPUTS DE LA COMPOSITE ACTION
-      # =====================================================
-      #
-      # Accede a un output generado por la acción personalizada
-      #
-      # steps.setup-deps.outputs.installed-deps
-      #
-      # El output debe estar definido dentro del
-      # action.yml de la Composite Action
-      #
+
       - name: Print setup deps output
         run: |
           echo "Installed dependencies: ${{ steps.setup-deps.outputs.installed-deps }}"
-      # Ejecuta pruebas unitarias
+
       - name: Test
         run: npm run test
-      # Genera el build de producción
+
       - name: Build
         run: npm run build
