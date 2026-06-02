@@ -1,0 +1,63 @@
+# Nombre del workflow que aparecerá en la pestaña Actions de GitHub
+name: 17 - 2 - Custom Actions - JS
+# Nombre dinámico de la ejecución mostrando los parámetros recibidos
+run-name: 17 - 2 - Custom Actions - JS | BB - ${{ inputs.base-branch }} TB - ${{ inputs.target-branch }} WD - ${{ inputs.working-dir }}
+# Evento que dispara el workflow
+on:
+  workflow_dispatch: # Permite ejecutar el workflow manualmente desde GitHub
+    inputs:
+      # Rama base para comparar cambios
+      base-branch:
+        type: string
+        default: main
+      # Rama donde se realizarán las actualizaciones de dependencias
+      target-branch:
+        type: string
+        default: update-dependencies
+      # Directorio donde se encuentra el proyecto
+      working-dir:
+        type: string
+        default: 17-custom-actions/react-app
+      # Activa mensajes adicionales para depuración
+      debug:
+        type: boolean
+        default: false
+# Permisos necesarios para el workflow
+permissions:
+  # Permite crear commits, ramas y realizar push
+  contents: write
+  # Permite crear o actualizar Pull Requests
+  pull-requests: write
+# Definición de los trabajos (jobs)
+jobs:
+  # Job encargado de verificar y actualizar dependencias
+  dependency-update:
+    # Runner donde se ejecutará el workflow
+    runs-on: ubuntu-latest
+    # Pasos del job
+    steps:
+      # Descarga el código del repositorio
+      - uses: actions/checkout@v4
+      # Ejecuta una acción personalizada creada en este repositorio
+      # para verificar si existen actualizaciones de dependencias
+      - name: Check for dependency updates
+        id: update-deps
+        # Acción JavaScript personalizada ubicada en:
+        # .github/actions/js-dependency-update
+        uses: ./.github/actions/js-dependency-update
+        # Parámetros enviados a la acción personalizada
+        with:
+          # Rama base para la comparación
+          base-branch: ${{ inputs.base-branch }}
+          # Rama donde se aplicarán los cambios
+          head-branch: ${{ inputs.target-branch }}
+          # Directorio del proyecto
+          working-directory: ${{ inputs.working-dir }}
+          # Token automático de GitHub para autenticación
+          gh-token: ${{ secrets.GITHUB_TOKEN }}
+          # Modo debug
+          debug: ${{ inputs.debug }}
+      # Muestra en consola el valor devuelto por la acción personalizada
+      - name: Print custom action output
+        run: |
+          echo "Updates available: ${{ steps.update-deps.outputs.updates-available }}"

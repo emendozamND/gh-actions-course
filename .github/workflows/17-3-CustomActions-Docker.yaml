@@ -1,0 +1,58 @@
+# Nombre del workflow que aparecerá en la pestaña Actions
+name: 17 - 3 - Custom Actions - Docker
+# Evento que dispara el workflow
+on:
+  # Permite ejecutar el workflow manualmente desde GitHub
+  workflow_dispatch:
+    # Parámetros que el usuario puede proporcionar al ejecutar el workflow
+    inputs:
+      # URL que será validada por la acción Docker
+      url:
+        # Muestra un menú desplegable en la interfaz de GitHub
+        type: choice
+        # Opciones disponibles para seleccionar
+        options:
+          - 'https://www.google.com'
+          - 'https://www.invalid-aidfghaidgfiazgd.com'
+          - 'invalid-aidfghaidgfiazgd'
+      # Número máximo de intentos antes de considerar fallida la validación
+      max_trials:
+        description: Maximum trials until action fails.
+        # Valor por defecto
+        default: '10'
+        # No es obligatorio especificarlo
+        required: false
+      # Tiempo de espera entre intentos
+      delay:
+        description: Delay in seconds between trials.
+        # Valor por defecto en segundos
+        default: '5'
+        # No es obligatorio especificarlo
+        required: false
+# Definición de trabajos (jobs)
+jobs:
+  # Job encargado de validar la disponibilidad de una URL
+  ping-url:
+    # Runner donde se ejecutará el workflow
+    runs-on: ubuntu-latest
+    steps:
+      # Descarga el código fuente del repositorio
+      - uses: actions/checkout@v4
+      # Ejecuta una acción personalizada basada en Docker
+      - name: Ping URL
+        # ID para acceder posteriormente a sus outputs
+        id: ping-url
+        # Acción Docker ubicada dentro del repositorio
+        uses: ./.github/actions/docker-ping-url
+        # Parámetros enviados a la acción Docker
+        with:
+          # URL a validar
+          url: ${{ inputs.url }}
+          # Número máximo de intentos
+          max_trials: ${{ inputs.max_trials }}
+          # Tiempo de espera entre intentos
+          delay: ${{ inputs.delay }}
+      # Imprime el resultado devuelto por la acción Docker
+      - name: Print output from ping url
+        run: |
+          echo "URL reachable: ${{ steps.ping-url.outputs.url-reachable }}"
