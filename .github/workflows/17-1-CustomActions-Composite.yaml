@@ -54,7 +54,7 @@ jobs:
         # ID utilizado para acceder a los outputs
         id: setup-deps
         # Ruta local de la Composite Action
-        uses: ./.github/actions/composite-cache-deps
+        uses: ./.github/workflows/actions/composite-cache-deps
         with:
           # Versión de Node.js que recibirá la acción
           node-version: 20.x
