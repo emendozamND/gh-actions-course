@@ -1,32 +1,23 @@
 # Nombre visible del workflow en GitHub Actions
 name: 15 - Working with Matrices
-
 # Permite ejecutar el workflow manualmente
 on:
   workflow_dispatch:
-
 jobs:
-
   # =====================================================
   # JOB 1: MATRIZ DE COMPATIBILIDAD
   # =====================================================
   backwards-compatibility:
-
     # Nombre dinámico del job.
     # Ejemplo: ubuntu-latest-18.x, windows-latest-20.x
     name: ${{ matrix.os }}-${{ matrix.node-version }}
-
     # El runner cambia dependiendo del sistema operativo de la matriz
     runs-on: ${{ matrix.os }}
-
     strategy:
-
       # Si una combinación falla, GitHub cancela las demás combinaciones pendientes
       fail-fast: true
-
       # Define las combinaciones que se van a ejecutar
       matrix:
-
         # Versiones de Node.js a probar
         node-version: [18.x, 20.x, 21.x]
 
@@ -73,52 +64,39 @@ jobs:
 
     # Nombre dinámico para visualizar cada combinación de la matriz
     name: ${{ matrix.color }}-${{ matrix.shape }}-${{ matrix.size }}-${{ matrix.opacity }}
-
     runs-on: ubuntu-latest
-
     strategy:
       matrix:
-
         # Valores base de la matriz
         color: [red, green]
         shape: [circle, square]
         size: [small, large]
-
         # include permite agregar valores o combinaciones especiales
         include:
-
           # Agrega opacity=75 a las combinaciones donde color=red
           - color: red
             opacity: 75
-
           # Agrega opacity=100 a las combinaciones donde shape=circle
           - shape: circle
             opacity: 100
-
           # Agrega una combinación adicional:
           # red-triangle sin size definido
           - color: red
             shape: triangle
-
           # Agrega una combinación adicional sólo con opacity=50
           - opacity: 50
-
           # Agrega una combinación específica:
           # green-circle-medium
           - color: green
             shape: circle
             size: medium
-
         # exclude elimina combinaciones de la matriz
         exclude:
-
           # Elimina todas las combinaciones donde:
           # color=green y shape=circle
           - color: green
             shape: circle
-
     steps:
-
       # Imprime los valores actuales de la matriz
       - name: Dummy step
         run: echo "${{ matrix.color }}-${{ matrix.shape }}-${{ matrix.size }}-${{ matrix.opacity }}"

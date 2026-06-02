@@ -1,0 +1,105 @@
+# Nombre visible del workflow en GitHub Actions
+name: 16 - Working with Environments
+# Permite ejecutar el workflow manualmente
+on:
+  workflow_dispatch:
+    inputs:
+        target-env:
+            type: environment
+            default: staging
+jobs:
+  # =====================================================
+  # JOB 1: DEPLOY A STAGING
+  # =====================================================
+  deploy-staging:
+    # Runner Linux donde se ejecutará el job
+    runs-on: ubuntu-latest
+    # Environment configurado en GitHub
+    #
+    # Repository Settings
+    # -> Environments
+    # -> staging
+    #
+    # Permite utilizar:
+    # - Variables específicas
+    # - Secrets específicos
+    # - Reglas de protección
+    # - Aprobaciones
+    environment: staging
+    # Variables disponibles para este job
+    env:
+      # Obtiene una variable del Environment
+      #
+      # Si MY_ENV_VALUE existe:
+      #   usa su valor
+      #
+      # Si no existe:
+      #   usa "default value"
+      my-env-value: ${{ vars.MY_ENV_VALUE || 'default value' }}
+    steps:
+      # Simula despliegue a staging
+      - name: Echo vars
+        run: |
+          echo "Deploying to staging"
+  # =====================================================
+  # JOB 2: PRUEBAS E2E
+  # =====================================================
+  e2e-tests:
+    runs-on: ubuntu-latest
+    # Espera a que staging termine correctamente
+    needs: deploy-staging
+    steps:
+      # Simula pruebas End-To-End
+      - name: E2E tests
+        run: echo "Running E2E"
+  # =====================================================
+  # JOB 3: DEPLOY FRONTEND A PRODUCCIÓN
+  # =====================================================
+  deploy-prod-frontend:
+    runs-on: ubuntu-latest
+    # Sólo inicia cuando las pruebas E2E terminan
+    needs: e2e-tests
+    # Environment de producción
+    environment: prod
+    env:
+      # Variable definida en el Environment prod
+      my-env-value: ${{ vars.MY_ENV_VALUE || 'default value' }}
+    steps:
+      # Simula despliegue del frontend
+      - name: Echo vars
+        run: |
+          echo "Deploying prod frontend"
+  # =====================================================
+  # JOB 4: DEPLOY BACKEND 1 A PRODUCCIÓN
+  # =====================================================
+  deploy-prod-backend1:
+    runs-on: ubuntu-latest
+    # Espera pruebas E2E
+    needs: e2e-tests
+    # Usa Environment prod
+    environment: prod
+    env:
+      # Variable del Environment prod
+      my-env-value: ${{ vars.MY_ENV_VALUE || 'default value' }}
+    steps:
+      # Simula despliegue Backend 1
+      - name: Echo vars
+        run: |
+          echo "Deploying prod backend 1"
+  # =====================================================
+  # JOB 5: DEPLOY BACKEND 2 A PRODUCCIÓN
+  # =====================================================
+  deploy-prod-backend2:
+    runs-on: ubuntu-latest
+    # Espera pruebas E2E
+    needs: e2e-tests
+    # Usa Environment prod
+    environment: prod
+    env:
+      # Variable del Environment prod
+      my-env-value: ${{ vars.MY_ENV_VALUE || 'default value' }}
+    steps:
+      # Simula despliegue Backend 2
+      - name: Echo vars
+        run: |
+          echo "Deploying prod backend 2"

@@ -1,31 +1,22 @@
 # Nombre visible del workflow en GitHub Actions
 name: 09 - Using functions
-
 # Eventos que disparan el workflow
 on:
-
     # Se ejecuta cuando se crea o actualiza un Pull Request
     pull_request:
-
     # Permite ejecutarlo manualmente desde GitHub
     workflow_dispatch:
-
 jobs:
-
-    # =====================================================
-    # JOB PRINCIPAL
-    # =====================================================
+   # =====================================================
+   # JOB PRINCIPAL
+   # =====================================================
     echo1:
-
         # Runner donde se ejecutará el job
         runs-on: ubuntu-latest
-
         steps:
-
             # Muestra el título del Pull Request
             - name: Print PR title
               run: echo "${{ github.event.pull_request.title }}"
-
             # Convierte el objeto labels a JSON y lo imprime
             - name: Print PR labels
               run: |
