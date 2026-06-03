@@ -1,46 +1,111 @@
-# Nombre visible del workflow
+# ==========================================
+# Nombre visible del workflow en GitHub Actions
+# ==========================================
 name: 17 - 1 - Custom Actions - Composite
 
-# Nombre que aparecerá en la ejecución del workflow
+# ==========================================
+# Nombre que aparecerá en cada ejecución.
+# Incluye el ambiente seleccionado (dev o prod)
+# ==========================================
 run-name: 17 - 1 - Custom Actions - Composite | env - ${{ inputs.target-env }}
 
+# ==========================================
+# Eventos que disparan el workflow
+# ==========================================
 on:
+
+  # Permite ejecutar el workflow manualmente
+  # desde la interfaz de GitHub
   workflow_dispatch:
+
+    # Parámetros que el usuario debe seleccionar
+    # antes de ejecutar el workflow
     inputs:
+
+      # Ambiente destino
       target-env:
+
+        # Descripción visible en la UI
         description: Which environment to target for dependency installation
+
+        # Tipo de dato: lista desplegable
         type: choice
+
+        # Opciones disponibles
         options:
           - dev
           - prod
 
+# ==========================================
+# Variables globales del workflow
+# Disponibles para todos los jobs
+# ==========================================
 env:
+
+  # Directorio donde se encuentra la aplicación React
   working-directory: 17-custom-actions/react-app
 
+# ==========================================
+# Definición de jobs
+# ==========================================
 jobs:
+
+  # Job encargado de compilar la aplicación
   build:
+
+    # Runner donde se ejecutará el job
     runs-on: ubuntu-latest
 
+    # Configuración por defecto para todos los comandos run
     defaults:
+
       run:
+
+        # Todos los comandos se ejecutarán
+        # dentro del directorio de la aplicación React
         working-directory: ${{ env.working-directory }}
 
+    # ======================================
+    # Pasos del job
+    # ======================================
     steps:
+
+      # Descarga el código fuente del repositorio
+      # dentro del runner
       - uses: actions/checkout@v4
 
+      # Ejecuta una acción compuesta personalizada
+      # encargada de instalar Node.js y dependencias
+      # aprovechando caché para mejorar rendimiento
       - name: Setup Node and NPM Dependencies
+
+        # Identificador para reutilizar outputs
         id: setup-deps
+
+        # Ruta local de la Composite Action
         uses: ./.github/workflows/actions/composite-cache-deps
+
         with:
+
+          # Versión de Node.js a instalar
           node-version: 20.x
+
+          # Directorio de trabajo de la aplicación
           working-dir: ${{ env.working-directory }}
 
+      # Muestra el valor devuelto por la acción compuesta
+      # mediante un output llamado installed-deps
       - name: Print setup deps output
+
         run: |
           echo "Installed dependencies: ${{ steps.setup-deps.outputs.installed-deps }}"
 
+      # Ejecuta las pruebas unitarias del proyecto
       - name: Test
+
         run: npm run test
 
+      # Genera el build de producción de la aplicación
       - name: Build
+
         run: npm run build
