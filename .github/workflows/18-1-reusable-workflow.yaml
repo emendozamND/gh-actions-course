@@ -1,0 +1,115 @@
+# =====================================================
+# Nombre visible del Reusable Workflow
+# =====================================================
+name: 18 - 1 - Reusable Workflows - Reusable Definition
+
+# =====================================================
+# Evento que permite que este workflow sea reutilizado
+# por otros workflows mediante "uses:"
+# =====================================================
+on:
+  workflow_call:
+
+    # ================================================
+    # Inputs que recibirá el workflow consumidor
+    # ================================================
+    inputs:
+
+      # Directorio que será utilizado durante el build
+      target-directory:
+
+        # Tipo de dato esperado
+        type: string
+
+        # Campo obligatorio
+        required: true
+
+    # ================================================
+    # Outputs que este workflow devolverá
+    # al workflow que lo invoque
+    # ================================================
+    outputs:
+
+      # Resultado del proceso de construcción
+      build-status:
+
+        # Descripción del output
+        description: The status of the build process
+
+        # Valor que se devolverá
+        # Se obtiene del output del job deploy
+        value: ${{ jobs.deploy.outputs.build-status }}
+
+      # URL generada después del despliegue
+      url:
+
+        # Descripción del output
+        description: The url of the deployed version
+
+        # Valor obtenido del output del job deploy
+        value: ${{ jobs.deploy.outputs.url }}
+
+# =====================================================
+# Definición de jobs
+# =====================================================
+jobs:
+
+  # Job encargado de construir y desplegar
+  deploy:
+
+    # Runner donde se ejecutará el job
+    runs-on: ubuntu-latest
+
+    # ================================================
+    # Outputs expuestos por este job
+    # Estos podrán ser consumidos por workflow_call
+    # ================================================
+    outputs:
+
+      # Obtiene el valor generado por el step Build
+      build-status: ${{ steps.build.outputs.build-status }}
+
+      # Obtiene la URL generada por el step Deploy
+      url: ${{ steps.deploy.outputs.url }}
+
+    # ================================================
+    # Pasos del job
+    # ================================================
+    steps:
+
+      # Descarga el repositorio dentro del runner
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      # ============================================
+      # Simula el proceso de compilación
+      # ============================================
+      - name: Build
+
+        # ID para acceder posteriormente a sus outputs
+        id: build
+
+        run: |
+
+          # Muestra el directorio recibido como input
+          echo "Building using directory ${{ inputs.target-directory }}"
+
+          # Crea un output llamado build-status
+          # disponible para el job y el workflow
+          echo "build-status=success" >> "$GITHUB_OUTPUT"
+
+      # ============================================
+      # Simula el despliegue de la aplicación
+      # ============================================
+      - name: Deploy
+
+        # ID para acceder a sus outputs
+        id: deploy
+
+        run: |
+
+          # Mensaje informativo
+          echo "Deploying build artifacts"
+
+          # Genera un output con la URL desplegada
+          echo "url=https://www.google.com" >> "$GITHUB_OUTPUT"
